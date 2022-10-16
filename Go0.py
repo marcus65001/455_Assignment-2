@@ -12,8 +12,8 @@ from board_base import DEFAULT_SIZE, GO_POINT, GO_COLOR
 from board import GoBoard
 from board_util import GoBoardUtil
 from engine import GoEngine
+from transposition_table import TT
 import signal
-import time
 
 
 class Go0:
@@ -39,23 +39,29 @@ class Go0:
 
     def solver_negamax(self, board: GoBoard) -> int:
         legal=GoBoardUtil.generate_legal_moves(board, board.current_player)
+        tt=TT()
         for m in legal:
             nboard=board.copy()
             nboard.play_move(m, nboard.current_player)
-            if self.negamax(nboard) == -1:
+            if self.negamax(nboard,tt) == -1:
                 return m
         return 0
 
-    def negamax(self, board: GoBoard) -> int:
+    def negamax(self, board: GoBoard,tt) -> int:
+        lookup = tt.lookup(board.code())
+        if lookup:
+            return lookup
         legal=GoBoardUtil.generate_legal_moves(board, board.current_player)
         if len(legal)==0:
             return -1
         for m in legal:
             nboard=board.copy()
             nboard.play_move(m, board.current_player)
-            value = - self.negamax(nboard)
+            value = - self.negamax(nboard,tt)
             if value == 1:
+                tt.store(board.code(),1)
                 return 1
+        tt.store(board.code(),-1)
         return -1
 
 
