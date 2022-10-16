@@ -74,7 +74,8 @@ class Go0:
     def get_move(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
         try:
             signal.alarm(self.timelimit)
-            move=self.solver_negamax(board)
+            nboard=board.copy()
+            move=self.solver_negamax(nboard)
             signal.alarm(0)
         except TimeoutError:
             return None
