@@ -12,6 +12,8 @@ from board_base import DEFAULT_SIZE, GO_POINT, GO_COLOR
 from board import GoBoard
 from board_util import GoBoardUtil
 from engine import GoEngine
+import signal
+import time
 
 
 class Go0:
@@ -28,11 +30,21 @@ class Go0:
         version : float
             version number (used by the GTP interface).
         """
+        signal.signal(signal.SIGALRM, self.timeout_handler)
         GoEngine.__init__(self, "Go0", 1.0)
 
+    def timeout_handler(self,signum,frame):
+        raise TimeoutError()
+
     def get_move(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
-        return GoBoardUtil.generate_random_move(board, color, 
+        try:
+            signal.alarm(self.timelimit)
+            move=GoBoardUtil.generate_random_move(board, color, 
                                                 use_eye_filter=False)
+            signal.alarm(0)
+        except TimeoutError:
+            return None
+        return move
 
     
   

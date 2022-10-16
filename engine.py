@@ -2,6 +2,7 @@ from board_base import GO_POINT, NO_POINT
 from board import GoBoard
 
 DEFAULT_KOMI = 6.5
+DEFAULT_TIMELIMIT = 1
 
 class GoEngine:
     def __init__(self, name: str, version: float) -> None:
@@ -12,6 +13,7 @@ class GoEngine:
         self.name: str = name
         self.version: float = version
         self.komi: float = DEFAULT_KOMI
+        self.timelimit: int = DEFAULT_TIMELIMIT
 
     def get_move(self, board: GoBoard, color: int) -> GO_POINT:
         """
@@ -19,4 +21,3 @@ class GoEngine:
         version : version number used by the GTP interface
         """
         pass
-        
