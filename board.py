@@ -11,7 +11,7 @@ Implements a basic Go board with functions to:
 
 The board uses a 1-dimensional representation with padding
 """
-
+import numpy
 import numpy as np
 from typing import List, Tuple
 
@@ -75,6 +75,15 @@ class GoBoard(object):
         
     def get_color(self, point: GO_POINT) -> GO_COLOR:
         return self.board[point]
+
+
+    def code(self):
+        c=numpy.longlong(0)
+        for p in where1d(self.board != BORDER):
+            c=c*3+self.board[p]
+        c=c*3+self.current_player
+        return c
+
 
     def pt(self, row: int, col: int) -> GO_POINT:
         return coord_to_point(row, col, self.size)
@@ -233,6 +242,14 @@ class GoBoard(object):
         
         self.current_player = opponent(color)
         return True
+
+    def play_legal(self, point: GO_POINT, color: GO_COLOR):
+        self.board[point] = color
+        self.current_player = opponent(color)
+
+    def undo(self, point: GO_POINT, color: GO_COLOR):
+        self.board[point] = EMPTY
+        self.current_player = opponent(color)
 
     def neighbors_of_color(self, point: GO_POINT, color: GO_COLOR) -> List:
         """ List of neighbors of point of given color """
