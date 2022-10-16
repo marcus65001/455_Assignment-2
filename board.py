@@ -78,10 +78,11 @@ class GoBoard(object):
 
 
     def code(self):
-        c=numpy.longlong(0)
+        c = numpy.longlong(self.current_player)
         for p in where1d(self.board != BORDER):
+            if c >= 3074457345618258599:
+                break
             c=c*3+self.board[p]
-        c=c*3+self.current_player
         return c
 
 
