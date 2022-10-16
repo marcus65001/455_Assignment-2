@@ -11,6 +11,7 @@ at the University of Edinburgh.
 import traceback
 import numpy as np
 import re
+import time
 from sys import stdin, stdout, stderr
 from typing import Any, Callable, Dict, List, Tuple
 
@@ -369,7 +370,61 @@ class GtpConnection:
             
     def solve_cmd(self, args: List[str]) -> None:
         # remove this respond and implement this method
-        self.respond('Implement This for Assignment 2')
+        copyBoard = self.board.copy()
+        legalMoves = GoBoardUtil.generate_legal_moves(copyBoard , copyBoard.current_player)
+        solve = self.negamaxSolve(legalMoves , copyBoard)
+        print(solve)
+        if solve[0] == "NW":
+            if self.board.current_player == 1:
+                self.respond("w")
+                return
+            else:
+                self.respond("b")
+                return
+        
+        coordinateInt = point_to_coord(solve[0] , self.board.size)
+        coordinateStr = format_point(coordinateInt)
+        coordinateStr = coordinateStr[0].lower() + coordinateStr[1]
+
+        if self.board.current_player == 1:
+            self.respond("b" + coordinateStr)
+        else:
+            self.respond("w" + coordinateStr) 
+
+        # self.respond('Implement This for Assignment 2')
+
+    def negamaxSolve(self, legalMoves, copyBoard):
+        if len(legalMoves) == 0:
+            return False
+        winningMoves = []
+        for m in legalMoves: 
+            # print(copyBoard.current_player)
+            copyBoard.play_move(m , copyBoard.current_player)
+            # print(copyBoard.current_player)
+            legalMoves = GoBoardUtil.generate_legal_moves(copyBoard, copyBoard.current_player)
+            success = not self.negamax(copyBoard , legalMoves)
+            copyBoard.board[m] = 0
+            copyBoard.current_player = opponent(copyBoard.current_player)
+            if success:
+                winningMoves.append(m)
+        return winningMoves
+
+    def negamax(self, copyBoard , legalMoves):
+
+        if len(legalMoves) == 0:
+            return False
+        
+        for m in legalMoves:
+             # print(copyBoard.current_player)
+            copyBoard.play_move(m , copyBoard.current_player)
+            # print(copyBoard.current_player)
+            legalMoves = GoBoardUtil.generate_legal_moves(copyBoard, copyBoard.current_player)
+            success = not self.negamax(copyBoard , legalMoves)
+            copyBoard.board[m] = 0
+            copyBoard.current_player = opponent(copyBoard.current_player)
+            if success:
+                return True
+            return False
 
     def timelimit_cmd(self, args: List[str]) -> None:
         try:
