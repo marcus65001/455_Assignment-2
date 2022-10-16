@@ -434,6 +434,7 @@ class GtpConnection:
             self.respond("Invalid parameter.")
             return
         self.go_engine.timelimit=t
+        self.respond()
         return
 
     """
