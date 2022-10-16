@@ -41,9 +41,12 @@ class Go0:
         legal=GoBoardUtil.generate_legal_moves(board, board.current_player)
         tt=TT()
         for m in legal:
-            nboard=board.copy()
-            nboard.play_move(m, nboard.current_player)
-            if self.negamax(nboard,tt) == -1:
+            # nboard=board.copy()
+            # nboard.play_move(m, nboard.current_player)
+            board.play_legal(m,board.current_player)
+            value=self.negamax(board,tt)
+            board.undo(m,board.current_player)
+            if value == -1:
                 return m
         return 0
 
@@ -55,9 +58,12 @@ class Go0:
         if len(legal)==0:
             return -1
         for m in legal:
-            nboard=board.copy()
-            nboard.play_move(m, board.current_player)
-            value = - self.negamax(nboard,tt)
+            # nboard=board.copy()
+            # nboard.play_move(m, board.current_player)
+            # value = - self.negamax(nboard,tt)
+            board.play_legal(m,board.current_player)
+            value=-self.negamax(board,tt)
+            board.undo(m,board.current_player)
             if value == 1:
                 tt.store(board.code(),1)
                 return 1
