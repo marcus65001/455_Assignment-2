@@ -36,11 +36,33 @@ class Go0:
     def timeout_handler(self,signum,frame):
         raise TimeoutError()
 
+
+    def solver_negamax(self, board: GoBoard) -> int:
+        legal=GoBoardUtil.generate_legal_moves(board, board.current_player)
+        for m in legal:
+            nboard=board.copy()
+            nboard.play_move(m, nboard.current_player)
+            if self.negamax(nboard) == -1:
+                return m
+        return 0
+
+    def negamax(self, board: GoBoard) -> int:
+        legal=GoBoardUtil.generate_legal_moves(board, board.current_player)
+        if len(legal)==0:
+            return -1
+        for m in legal:
+            nboard=board.copy()
+            nboard.play_move(m, board.current_player)
+            value = - self.negamax(nboard)
+            if value == 1:
+                return 1
+        return -1
+
+
     def get_move(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
         try:
             signal.alarm(self.timelimit)
-            move=GoBoardUtil.generate_random_move(board, color, 
-                                                use_eye_filter=False)
+            move=self.solver_negamax(board)
             signal.alarm(0)
         except TimeoutError:
             return None
