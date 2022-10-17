@@ -14,6 +14,8 @@ from board_util import GoBoardUtil
 from engine import GoEngine
 from transposition_table import TT
 import signal
+from sys import platform
+import time
 
 
 class Go0:
@@ -30,11 +32,23 @@ class Go0:
         version : float
             version number (used by the GTP interface).
         """
-        signal.signal(signal.SIGALRM, self.timeout_handler)
+        if platform!="win32":
+            signal.signal(signal.SIGALRM, self.timeout_handler)
+        self.timer=time.process_time()
         GoEngine.__init__(self, "Go0", 1.0)
 
     def timeout_handler(self,signum,frame):
         raise TimeoutError()
+
+
+    def timeout_check(self):
+        if time.process_time()-self.timer>self.timelimit:
+            return True
+        return False
+
+
+    def start_timer(self):
+        self.timer = time.process_time()
 
 
     def solver_negamax(self, board: GoBoard) -> int:
@@ -51,6 +65,9 @@ class Go0:
         return 0
 
     def negamax(self, board: GoBoard,tt) -> int:
+        if platform=="win32":
+            if self.timeout_check():
+                raise TimeoutError()
         lookup = tt.lookup(board.code())
         if lookup:
             return lookup
@@ -70,13 +87,16 @@ class Go0:
         tt.store(board.code(),False)
         return False
 
-
     def get_move(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
         try:
-            signal.alarm(self.timelimit)
+            if platform!="win32":
+                signal.alarm(self.timelimit)
+            else:
+                self.start_timer()
             nboard=board.copy()
             move=self.solver_negamax(nboard)
-            signal.alarm(0)
+            if platform!="win32":
+                signal.alarm(0)
         except TimeoutError:
             return None
         return move
