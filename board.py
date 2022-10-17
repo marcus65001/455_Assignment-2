@@ -60,7 +60,8 @@ class GoBoard(object):
         self.current_player: GO_COLOR = BLACK
         self.maxpoint: int = board_array_size(size)
         self.board: np.ndarray[GO_POINT] = np.full(self.maxpoint, BORDER, dtype=GO_POINT)
-        self._initialize_empty_points(self.board)
+        self.liberty: np.ndarray[GO_POINT] = np.full(self.maxpoint, 0, dtype=GO_POINT)
+        self._initialize_empty_points(self.board, self.liberty)
         
         
     def copy(self) -> 'GoBoard':
@@ -70,6 +71,7 @@ class GoBoard(object):
         b.current_player = self.current_player
         assert b.maxpoint == self.maxpoint
         b.board = np.copy(self.board)
+        b.liberty = np.copy(self.liberty)
         return b
 
         
@@ -97,9 +99,40 @@ class GoBoard(object):
         This method tries to play the move on a temporary copy of the board.
         This prevents the board from being modified by the move
         """
-        board_copy: GoBoard = self.copy()
-        can_play_move = board_copy.play_move(point, color)
-        return can_play_move
+        # board_copy: GoBoard = self.copy()
+        # can_play_move = board_copy.play_move(point, color)
+        # return can_play_move
+        assert is_black_white(color)
+
+        if self.board[point] != EMPTY:
+            return False
+
+        self.board[point] = color
+        neighbors = self._neighbors(point)
+
+        new_block=True
+        # check for capturing or suicide
+        for nb in neighbors:
+            if self.board[nb] in {BLACK, WHITE}:
+                if self.board[nb] == color:
+                    new_block=False
+                if self.liberty[nb] == point:
+                    block = self.connected_component(nb)
+                    liberty = self._get_liberty(block)
+                    if not liberty:
+                        # undo capturing or suicide move
+                        self.board[point] = EMPTY
+                        return False
+
+        if new_block:
+            block = self.connected_component(point)
+            liberty=self._get_liberty(block)
+            if not liberty:
+                self.board[point]=EMPTY
+                return False
+
+        self.board[point] = EMPTY
+        return True
 
         
            
@@ -116,7 +149,7 @@ class GoBoard(object):
         return row * self.NS + 1
         
         
-    def _initialize_empty_points(self, board_array: np.ndarray) -> None:
+    def _initialize_empty_points(self, board_array: np.ndarray, liberty_array: np.ndarray) -> None:
         """
         Fills points on the board with EMPTY
         Argument
@@ -126,6 +159,7 @@ class GoBoard(object):
         for row in range(1, self.size + 1):
             start: int = self.row_start(row)
             board_array[start : start + self.size] = EMPTY
+            board_array[start: start + self.size] = 0
 
     def is_eye(self, point: GO_POINT, color: GO_COLOR) -> bool:
         """
@@ -166,7 +200,18 @@ class GoBoard(object):
             if empty_nbs:
                 return True
         return False
-        
+
+
+    def _get_liberty(self, block: np.ndarray) -> GO_POINT:
+        """
+        Check if the given block has any liberty.
+        block is a numpy boolean array
+        """
+        for stone in where1d(block):
+            empty = self.neighbors_of_color(stone, EMPTY)
+            if empty:
+                return empty[0]
+        return None
         
     def _block_of(self, stone: GO_POINT) -> np.ndarray:
         """
@@ -213,35 +258,40 @@ class GoBoard(object):
         Play a move of color on point
         Returns whether move was legal
         """
-        
+
         assert is_black_white(color)
-        
+
         if self.board[point] != EMPTY:
             return False
-            
-        opp_color = opponent(color)
-        in_enemy_eye = self._is_surrounded(point, opp_color)
+
         self.board[point] = color
         neighbors = self._neighbors(point)
-        
-        #check for capturing
+
+        new_block = True
+        updates=[]
+        # check for capturing or suicide
         for nb in neighbors:
-            if self.board[nb] == opp_color:
-                captured = self._detect_and_process_capture(nb)
-                if captured:
-                #undo capturing move
-                    self.board[point] = EMPTY
-                    return False
-                    
-                    
-        #check for suicide
-        block = self._block_of(point)
-        if not self._has_liberty(block):  
-            # undo suicide move
-            self.board[point] = EMPTY
-            return False
-        
-        self.current_player = opponent(color)
+            if self.board[nb] in {BLACK, WHITE}:
+                if self.board[nb] == color:
+                    new_block = False
+                if self.liberty[nb] == point:
+                    block = self.connected_component(nb)
+                    liberty = self._get_liberty(block)
+                    if not liberty:
+                        # undo capturing or suicide move
+                        self.board[point] = EMPTY
+                        return False
+                    updates.append((block,liberty))
+
+        if new_block:
+            block = self.connected_component(point)
+            liberty = self._get_liberty(block)
+            if not liberty:
+                self.board[point] = EMPTY
+                return False
+            updates.append((block,liberty))
+        for b in updates:
+            self.liberty[b[0]] = b[1]
         return True
 
     def play_legal(self, point: GO_POINT, color: GO_COLOR):
