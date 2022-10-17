@@ -46,7 +46,7 @@ class Go0:
             board.play_legal(m,board.current_player)
             value=self.negamax(board,tt)
             board.undo(m,board.current_player)
-            if value == -1:
+            if value == False:
                 return m
         return 0
 
@@ -56,19 +56,19 @@ class Go0:
             return lookup
         legal=GoBoardUtil.generate_legal_moves(board, board.current_player)
         if len(legal)==0:
-            return -1
+            return False
         for m in legal:
             # nboard=board.copy()
             # nboard.play_move(m, board.current_player)
             # value = - self.negamax(nboard,tt)
             board.play_legal(m,board.current_player)
-            value=-self.negamax(board,tt)
+            value=not self.negamax(board,tt)
             board.undo(m,board.current_player)
-            if value == 1:
-                tt.store(board.code(),1)
-                return 1
-        tt.store(board.code(),-1)
-        return -1
+            if value == True:
+                tt.store(board.code(),True)
+                return True
+        tt.store(board.code(),False)
+        return False
 
 
     def get_move(self, board: GoBoard, color: GO_COLOR) -> GO_POINT:
