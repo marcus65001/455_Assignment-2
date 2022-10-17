@@ -354,9 +354,15 @@ class GtpConnection:
         # change this method to use your solver
         board_color = args[0].lower()
         color = color_to_int(board_color)
+        legal = GoBoardUtil.generate_legal_moves(self.board,color)
+
+        if len(legal) == 0:
+            self.respond("resign")
+            return
+
         move = self.go_engine.get_move(self.board, color)
-        if move is None:
-            self.respond('unknown')
+        if move is None or move == 0:
+            self.respond(format_point(point_to_coord(legal[0])))
             return
             
         move_coord = point_to_coord(move, self.board.size)
