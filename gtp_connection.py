@@ -362,7 +362,7 @@ class GtpConnection:
 
         move = self.go_engine.get_move(self.board, color)
         if move is None or move == 0:
-            self.respond(format_point(point_to_coord(legal[0])))
+            self.respond(format_point(point_to_coord(legal[0], self.board.size)))
             return
             
         move_coord = point_to_coord(move, self.board.size)
